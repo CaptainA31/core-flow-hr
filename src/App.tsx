@@ -8,6 +8,13 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Header } from "@/components/layout/Header";
 import Dashboard from "./pages/Dashboard";
 import Employees from "./pages/Employees";
+import Attendance from "./pages/Attendance";
+import LeaveManagement from "./pages/LeaveManagement";
+import Payroll from "./pages/Payroll";
+import Documents from "./pages/Documents";
+import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,13 +35,13 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/employees" element={<Employees />} />
-                    <Route path="/attendance" element={<div>Attendance - Coming Soon</div>} />
-                    <Route path="/leaves" element={<div>Leave Management - Coming Soon</div>} />
-                    <Route path="/payroll" element={<div>Payroll - Coming Soon</div>} />
-                    <Route path="/documents" element={<div>Documents - Coming Soon</div>} />
-                    <Route path="/reports" element={<div>Reports - Coming Soon</div>} />
-                    <Route path="/notifications" element={<div>Notifications - Coming Soon</div>} />
-                    <Route path="/settings" element={<div>Settings - Coming Soon</div>} />
+                    <Route path="/attendance" element={<Attendance />} />
+                    <Route path="/leaves" element={<LeaveManagement />} />
+                    <Route path="/payroll" element={<Payroll />} />
+                    <Route path="/documents" element={<Documents />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/settings" element={<Settings />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

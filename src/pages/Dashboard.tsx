@@ -3,8 +3,11 @@ import { StatCard } from "@/components/dashboard/StatCard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Dashboard() {
+  const { toast } = useToast()
   const stats = [
     {
       title: "Total Employees",
@@ -140,19 +143,37 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Button className="h-24 flex-col gap-2">
-              <Users className="h-6 w-6" />
-              Add Employee
-            </Button>
-            <Button variant="outline" className="h-24 flex-col gap-2">
+            <AddEmployeeDialog />
+            <Button 
+              variant="outline" 
+              className="h-24 flex-col gap-2"
+              onClick={() => toast({
+                title: "Attendance",
+                description: "Attendance marking feature coming soon!",
+              })}
+            >
               <Clock className="h-6 w-6" />
               Mark Attendance
             </Button>
-            <Button variant="outline" className="h-24 flex-col gap-2">
+            <Button 
+              variant="outline" 
+              className="h-24 flex-col gap-2"
+              onClick={() => toast({
+                title: "Leave Application",
+                description: "Leave application feature coming soon!",
+              })}
+            >
               <Calendar className="h-6 w-6" />
               Apply Leave
             </Button>
-            <Button variant="outline" className="h-24 flex-col gap-2">
+            <Button 
+              variant="outline" 
+              className="h-24 flex-col gap-2"
+              onClick={() => toast({
+                title: "Payroll",
+                description: "Payroll generation feature coming soon!",
+              })}
+            >
               <DollarSign className="h-6 w-6" />
               Generate Payroll
             </Button>

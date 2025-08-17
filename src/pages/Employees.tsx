@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
+import { Search, Filter, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog"
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -106,10 +107,7 @@ export default function Employees() {
             Manage your team members and their information
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Employee
-        </Button>
+        <AddEmployeeDialog />
       </div>
 
       {/* Stats Cards */}
