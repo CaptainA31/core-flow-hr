@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { Settings as SettingsIcon, User, Shield, Bell, Database, Palette, Globe, Save } from "lucide-react"
+import { Settings as SettingsIcon, User, Shield, Bell, Database, Palette, Globe, Save, Download, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -18,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea"
 export default function Settings() {
   const [companyName, setCompanyName] = useState("CoreFlow HR")
   const [companyEmail, setCompanyEmail] = useState("admin@coreflow.com")
+  const { toast } = useToast()
 
   const systemSettings = [
     { name: "Automatic Backups", description: "Daily database backups", enabled: true },
@@ -44,7 +46,13 @@ export default function Settings() {
             Configure your HR system settings and preferences
           </p>
         </div>
-        <Button className="gap-2">
+        <Button 
+          className="gap-2"
+          onClick={() => toast({
+            title: "Settings Saved",
+            description: "All settings have been saved successfully.",
+          })}
+        >
           <Save className="h-4 w-4" />
           Save Changes
         </Button>
@@ -198,12 +206,29 @@ export default function Settings() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-sm text-muted-foreground">{role.users} users</span>
-                        <Button variant="outline" size="sm">Edit</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => toast({
+                            title: "Role Editor",
+                            description: `Editing permissions for ${role.name} role.`,
+                          })}
+                        >
+                          Edit
+                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <Button className="mt-4">Add New Role</Button>
+                <Button 
+                  className="mt-4"
+                  onClick={() => toast({
+                    title: "New Role Created",
+                    description: "A new user role has been created successfully.",
+                  })}
+                >
+                  Add New Role
+                </Button>
               </CardContent>
             </Card>
 
@@ -448,8 +473,23 @@ export default function Settings() {
                   Create an instant backup of your system data
                 </p>
                 <div className="flex gap-2">
-                  <Button>Create Backup Now</Button>
-                  <Button variant="outline">Download Latest</Button>
+                  <Button onClick={() => toast({
+                    title: "Backup Created",
+                    description: "System backup has been created successfully.",
+                  })}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Create Backup Now
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => toast({
+                      title: "Downloading Backup",
+                      description: "Latest backup file is being downloaded.",
+                    })}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Download Latest
+                  </Button>
                 </div>
               </CardContent>
             </Card>

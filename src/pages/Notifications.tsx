@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Bell, CheckCircle, AlertCircle, Clock, User, Settings, Filter, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,7 @@ import { Switch } from "@/components/ui/switch"
 
 export default function Notifications() {
   const [searchTerm, setSearchTerm] = useState("")
+  const { toast } = useToast()
 
   const notifications = [
     {
@@ -127,8 +129,23 @@ export default function Notifications() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Mark All as Read</Button>
-          <Button variant="outline" className="gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => toast({
+              title: "Notifications Marked as Read",
+              description: "All notifications have been marked as read.",
+            })}
+          >
+            Mark All as Read
+          </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => toast({
+              title: "Settings Updated",
+              description: "Notification settings have been updated.",
+            })}
+          >
             <Settings className="h-4 w-4" />
             Settings
           </Button>

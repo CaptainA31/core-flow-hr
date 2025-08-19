@@ -1,6 +1,8 @@
 import { useState } from "react"
-import { Calendar, Plus, Filter, Search, CheckCircle, XCircle, Clock, User } from "lucide-react"
+import { Calendar, Plus, Filter, Search, CheckCircle, XCircle, Clock, User, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { exportLeaveReport } from "@/lib/pdf-export"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +34,23 @@ import { Textarea } from "@/components/ui/textarea"
 export default function LeaveManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showApplyDialog, setShowApplyDialog] = useState(false)
+  const { toast } = useToast()
+
+  const handleExportReport = () => {
+    const exportData = leaveRequests.map(request => ({
+      employee: request.employeeName,
+      type: request.leaveType,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      days: request.days,
+      status: request.status
+    }))
+    exportLeaveReport(exportData)
+    toast({
+      title: "Report Exported",
+      description: "Leave management report has been downloaded successfully.",
+    })
+  }
 
   const leaveRequests = [
     {
@@ -108,7 +127,12 @@ export default function LeaveManagement() {
             Manage employee leave requests and balances
           </p>
         </div>
-        <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportReport}>
+            <Download className="h-4 w-4" />
+            Export Report
+          </Button>
+          <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -149,12 +173,19 @@ export default function LeaveManagement() {
                 <Textarea placeholder="Please provide a reason for your leave request..." />
               </div>
               <div className="flex gap-2 pt-4">
-                <Button onClick={() => setShowApplyDialog(false)}>Submit Request</Button>
+                <Button onClick={() => {
+                  setShowApplyDialog(false)
+                  toast({
+                    title: "Leave Request Submitted",
+                    description: "Your leave request has been submitted for approval.",
+                  })
+                }}>Submit Request</Button>
                 <Button variant="outline" onClick={() => setShowApplyDialog(false)}>Cancel</Button>
               </div>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -268,16 +299,33 @@ export default function LeaveManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {request.status === "Pending" && (
-                            <div className="flex gap-1">
-                              <Button size="sm" variant="outline" className="h-8 px-2">
-                                <CheckCircle className="h-3 w-3" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-8 px-2">
-                                <XCircle className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
+                           {request.status === "Pending" && (
+                             <div className="flex gap-1">
+                               <Button 
+                                 size="sm" 
+                                 variant="outline" 
+                                 className="h-8 px-2"
+                                 onClick={() => toast({
+                                   title: "Leave Approved",
+                                   description: `${request.employeeName}'s leave request has been approved.`,
+                                 })}
+                               >
+                                 <CheckCircle className="h-3 w-3" />
+                               </Button>
+                               <Button 
+                                 size="sm" 
+                                 variant="outline" 
+                                 className="h-8 px-2"
+                                 onClick={() => toast({
+                                   title: "Leave Rejected",
+                                   description: `${request.employeeName}'s leave request has been rejected.`,
+                                   variant: "destructive"
+                                 })}
+                               >
+                                 <XCircle className="h-3 w-3" />
+                               </Button>
+                             </div>
+                           )}
                         </TableCell>
                       </TableRow>
                     ))}
