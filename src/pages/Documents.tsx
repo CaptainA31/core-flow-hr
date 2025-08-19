@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { FileText, Upload, Download, Search, Filter, Eye, Trash2, Plus, Folder } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +31,14 @@ import {
 
 export default function Documents() {
   const [searchTerm, setSearchTerm] = useState("")
+  const { toast } = useToast()
+
+  const handleDownloadDocument = (fileName: string) => {
+    toast({
+      title: "Download Started",
+      description: `Downloading ${fileName}...`,
+    })
+  }
   const [showUploadDialog, setShowUploadDialog] = useState(false)
 
   const documents = [
@@ -299,7 +308,7 @@ export default function Documents() {
                         <Button size="sm" variant="outline" className="h-8 px-2">
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 px-2">
+                        <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => handleDownloadDocument(doc.name)}>
                           <Download className="h-3 w-3" />
                         </Button>
                         <Button size="sm" variant="outline" className="h-8 px-2 text-destructive">

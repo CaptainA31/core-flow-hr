@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { Calendar, Clock, Download, Filter, Search, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { exportAttendanceReport } from "@/lib/pdf-export"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +25,15 @@ import {
 
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState("")
+  const { toast } = useToast()
+
+  const handleExportReport = () => {
+    exportAttendanceReport(attendanceData, "Current Month")
+    toast({
+      title: "Report Exported",
+      description: "Attendance report has been downloaded successfully.",
+    })
+  }
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
 
   const attendanceData = [
@@ -108,7 +119,7 @@ export default function Attendance() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportReport}>
             <Download className="h-4 w-4" />
             Export Report
           </Button>

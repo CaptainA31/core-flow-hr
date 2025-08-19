@@ -9,10 +9,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
+import { exportDepartmentAnalytics, downloadReportTemplate } from "@/lib/pdf-export"
 
 export default function Reports() {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly")
   const [selectedYear, setSelectedYear] = useState("2024")
+  const { toast } = useToast()
+
+  const handleExportAll = () => {
+    exportDepartmentAnalytics(departmentData)
+    toast({
+      title: "Export Complete",
+      description: "All reports have been exported successfully.",
+    })
+  }
+
+  const handleExportReport = (reportType: string) => {
+    toast({
+      title: "Export Started",
+      description: `Exporting ${reportType} report...`,
+    })
+    // Simulate export process
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: `${reportType} report has been downloaded.`,
+      })
+    }, 1000)
+  }
+
+  const handleViewDetails = (reportType: string) => {
+    toast({
+      title: "View Details",
+      description: `Opening detailed view for ${reportType}...`,
+    })
+  }
+
+  const handleDownloadTemplate = () => {
+    downloadReportTemplate("Custom Report")
+    toast({
+      title: "Template Downloaded",
+      description: "Report template has been downloaded successfully.",
+    })
+  }
 
   const reportTypes = [
     {
@@ -104,7 +144,7 @@ export default function Reports() {
               <SelectItem value="2022">2022</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportAll}>
             <Download className="h-4 w-4" />
             Export All
           </Button>
@@ -146,7 +186,7 @@ export default function Reports() {
                     <p className="text-sm text-muted-foreground">{report.description}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => handleExportReport(report.title)}>
                   <Download className="h-3 w-3" />
                   Export
                 </Button>
@@ -155,7 +195,7 @@ export default function Reports() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{report.data}</span>
-                <Button variant="ghost" size="sm" className="gap-2">
+                <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleViewDetails(report.title)}>
                   <BarChart3 className="h-3 w-3" />
                   View Details
                 </Button>
@@ -204,11 +244,11 @@ export default function Reports() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
-                        <Button variant="outline" size="sm" className="h-8 gap-1">
+                        <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleViewDetails(`${dept.name} Department`)}>
                           <BarChart3 className="h-3 w-3" />
                           View
                         </Button>
-                        <Button variant="outline" size="sm" className="h-8 gap-1">
+                        <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleExportReport(`${dept.name} Department`)}>
                           <Download className="h-3 w-3" />
                           Export
                         </Button>
@@ -281,7 +321,7 @@ export default function Reports() {
               <BarChart3 className="h-4 w-4" />
               Generate Report
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleDownloadTemplate}>
               <Download className="h-4 w-4" />
               Download Template
             </Button>

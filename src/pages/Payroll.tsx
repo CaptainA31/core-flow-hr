@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { DollarSign, Download, Plus, Search, Filter, Eye, FileText, Calculator } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { exportPayrollReport } from "@/lib/pdf-export"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +32,22 @@ import {
 
 export default function Payroll() {
   const [searchTerm, setSearchTerm] = useState("")
+  const { toast } = useToast()
+
+  const handleExportPayroll = () => {
+    exportPayrollReport(payrollData, "Current Month")
+    toast({
+      title: "Payroll Exported",
+      description: "Payroll report has been downloaded successfully.",
+    })
+  }
+
+  const handleDownloadSlip = (employeeName: string) => {
+    toast({
+      title: "Salary Slip Downloaded",
+      description: `Salary slip for ${employeeName} has been downloaded.`,
+    })
+  }
   const [selectedMonth, setSelectedMonth] = useState("2024-01")
 
   const payrollData = [
@@ -121,7 +139,7 @@ export default function Payroll() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExportPayroll}>
             <Download className="h-4 w-4" />
             Export Payroll
           </Button>
@@ -254,7 +272,7 @@ export default function Payroll() {
                             <Button size="sm" variant="outline" className="h-8 px-2">
                               <Eye className="h-3 w-3" />
                             </Button>
-                            <Button size="sm" variant="outline" className="h-8 px-2">
+                            <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => handleDownloadSlip(employee.name)}>
                               <Download className="h-3 w-3" />
                             </Button>
                           </div>

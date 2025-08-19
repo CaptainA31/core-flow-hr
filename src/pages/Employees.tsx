@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Search, Filter, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -23,6 +24,14 @@ import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog"
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("")
+  const { toast } = useToast()
+
+  const handleViewDetails = (employeeName: string) => {
+    toast({
+      title: "Employee Details",
+      description: `Opening profile for ${employeeName}...`,
+    })
+  }
 
   // Mock employee data
   const employees = [
@@ -209,7 +218,7 @@ export default function Employees() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="gap-2">
+                          <DropdownMenuItem className="gap-2" onClick={() => handleViewDetails(employee.name)}>
                             <Eye className="h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
