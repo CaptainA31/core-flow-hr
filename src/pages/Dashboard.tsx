@@ -5,36 +5,49 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog"
 import { useToast } from "@/hooks/use-toast"
+import { useEmployees } from "@/hooks/useEmployees"
+import { useAttendance } from "@/hooks/useAttendance"
+import { useLeaveRequests } from "@/hooks/useLeaveRequests"
 
 export default function Dashboard() {
   const { toast } = useToast()
+  const { data: employees = [] } = useEmployees()
+  const { data: attendance = [] } = useAttendance()
+  const { data: leaveRequests = [] } = useLeaveRequests()
+
+  const totalEmployees = employees.length
+  const activeEmployees = employees.filter(emp => emp.status === 'Active').length
+  const onLeaveEmployees = employees.filter(emp => emp.status === 'On Leave').length
+  const pendingLeaveRequests = leaveRequests.filter(req => req.status === 'Pending').length
+  const todayAttendance = attendance.filter(att => att.status === 'Present').length
+
   const stats = [
     {
       title: "Total Employees",
-      value: 247,
+      value: totalEmployees,
       description: "Active employees",
       icon: Users,
       trend: { value: 12, isPositive: true }
     },
     {
       title: "Present Today",
-      value: 231,
-      description: "94% attendance rate",
+      value: todayAttendance,
+      description: `${activeEmployees > 0 ? ((todayAttendance / activeEmployees) * 100).toFixed(0) : 0}% attendance rate`,
       icon: UserCheck,
       trend: { value: 2, isPositive: true }
     },
     {
       title: "On Leave",
-      value: 12,
+      value: onLeaveEmployees,
       description: "Various leave types",
       icon: Calendar,
     },
     {
-      title: "Monthly Payroll",
-      value: "$1.2M",
-      description: "Current month estimate",
-      icon: DollarSign,
-      trend: { value: 8, isPositive: true }
+      title: "Pending Requests",
+      value: pendingLeaveRequests,
+      description: "Leave requests to review",
+      icon: AlertCircle,
+      trend: { value: 3, isPositive: false }
     }
   ]
 

@@ -1,178 +1,175 @@
-import { useState } from "react"
-import { Search, Filter, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog"
+import { useState } from "react";
+import { Search, Filter, Plus, Download, Eye, Edit, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog";
+import { useToast } from "@/hooks/use-toast";
+import { exportEmployeeReport } from "@/lib/pdf-export";
+import { useEmployees, useDeleteEmployee } from "@/hooks/useEmployees";
 
 export default function Employees() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const { toast } = useToast()
+  const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+  const { data: employees = [], isLoading } = useEmployees();
+  const deleteEmployee = useDeleteEmployee();
 
   const handleViewDetails = (employeeName: string) => {
     toast({
-      title: "Employee Details",
-      description: `Opening profile for ${employeeName}...`,
-    })
-  }
+      title: "Employee Details", 
+      description: `Viewing details for ${employeeName}`,
+    });
+  };
 
-  // Mock employee data
-  const employees = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.johnson@company.com",
-      department: "Engineering",
-      role: "Senior Developer",
-      status: "Active",
-      joinDate: "2022-03-15",
-      salary: "$85,000"
-    },
-    {
-      id: 2,
-      name: "Mike Chen",
-      email: "mike.chen@company.com",
-      department: "Marketing",
-      role: "Marketing Manager",
-      status: "Active",
-      joinDate: "2021-11-08",
-      salary: "$72,000"
-    },
-    {
-      id: 3,
-      name: "Alex Rodriguez",
-      email: "alex.rodriguez@company.com",
-      department: "HR",
-      role: "HR Specialist",
-      status: "On Leave",
-      joinDate: "2023-01-20",
-      salary: "$58,000"
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      email: "emily.davis@company.com",
-      department: "Finance",
-      role: "Financial Analyst",
-      status: "Active",
-      joinDate: "2022-07-12",
-      salary: "$65,000"
-    },
-    {
-      id: 5,
-      name: "David Wilson",
-      email: "david.wilson@company.com",
-      department: "Engineering",
-      role: "Team Lead",
-      status: "Active",
-      joinDate: "2020-05-03",
-      salary: "$95,000"
+  const handleDeleteEmployee = async (id: string, name: string) => {
+    try {
+      await deleteEmployee.mutateAsync(id);
+      toast({
+        title: "Employee Deleted",
+        description: `${name} has been removed from the system.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete employee.",
+        variant: "destructive",
+      });
     }
-  ]
+  };
 
-  const departments = ["All", "Engineering", "Marketing", "HR", "Finance", "Operations"]
+  const handleExportReport = () => {
+    const employeeData = employees.map(emp => ({
+      name: `${emp.first_name} ${emp.last_name}`,
+      position: emp.role,
+      department: emp.department,
+      email: emp.email,
+      phone: 'N/A',
+      status: emp.status
+    }));
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
-  }
+    exportEmployeeReport(employeeData);
+    toast({
+      title: "Report Exported",
+      description: "Employee report has been downloaded successfully.",
+    });
+  };
 
-  const getStatusColor = (status: string) => {
+  // Filter employees based on search term
+  const filteredEmployees = employees.filter(employee =>
+    `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.department.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const departments = ["All", "Engineering", "Marketing", "Sales", "HR", "Finance", "Operations"];
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  };
+
+  const getStatusColor = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Active":
-        return "default"
+        return "default";
       case "On Leave":
-        return "secondary"
+        return "secondary";
       case "Inactive":
-        return "destructive"
+        return "destructive";
       default:
-        return "outline"
+        return "outline";
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Employee Management</h1>
           <p className="text-muted-foreground">
             Manage your team members and their information
           </p>
         </div>
-        <AddEmployeeDialog />
+        <div className="flex items-center gap-2">
+          <Button onClick={handleExportReport} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+          <AddEmployeeDialog />
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-foreground">247</div>
-            <p className="text-xs text-muted-foreground">Total Employees</p>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{employees.length}</div>
+            <p className="text-xs text-muted-foreground">+12% from last month</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-success">235</div>
-            <p className="text-xs text-muted-foreground">Active</p>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{employees.filter(emp => emp.status === 'Active').length}</div>
+            <p className="text-xs text-muted-foreground">{employees.length > 0 ? ((employees.filter(emp => emp.status === 'Active').length / employees.length) * 100).toFixed(0) : 0}% of total</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-warning">12</div>
-            <p className="text-xs text-muted-foreground">On Leave</p>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">On Leave</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{employees.filter(emp => emp.status === 'On Leave').length}</div>
+            <p className="text-xs text-muted-foreground">Various leave types</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-muted-foreground">5</div>
-            <p className="text-xs text-muted-foreground">New This Month</p>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">New This Month</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{employees.filter(emp => {
+              const joinDate = new Date(emp.join_date);
+              const now = new Date();
+              return joinDate.getMonth() === now.getMonth() && joinDate.getFullYear() === now.getFullYear();
+            }).length}</div>
+            <p className="text-xs text-muted-foreground">Recent hires</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Search */}
+      {/* Filter and Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline">
+          <Filter className="h-4 w-4 mr-2" />
+          Filter
+        </Button>
+      </div>
+
+      {/* Employee Directory */}
       <Card>
         <CardHeader>
           <CardTitle>Employee Directory</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search employees..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Filter
-            </Button>
-          </div>
-
-          {/* Employee Table */}
-          <div className="border rounded-lg">
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -182,64 +179,72 @@ export default function Employees() {
                   <TableHead>Status</TableHead>
                   <TableHead>Join Date</TableHead>
                   <TableHead>Salary</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                            {getInitials(employee.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{employee.name}</div>
-                          <div className="text-sm text-muted-foreground">{employee.email}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>{employee.role}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(employee.status)}>
-                        {employee.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{employee.joinDate}</TableCell>
-                    <TableCell className="font-medium">{employee.salary}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="gap-2" onClick={() => handleViewDetails(employee.name)}>
-                            <Eye className="h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2">
-                            <Edit className="h-4 w-4" />
-                            Edit Employee
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center">Loading employees...</TableCell>
                   </TableRow>
-                ))}
+                ) : filteredEmployees.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center">No employees found</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredEmployees.map((employee) => (
+                    <TableRow key={employee.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={employee.avatar_url || ''} />
+                            <AvatarFallback>{getInitials(employee.first_name, employee.last_name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{employee.first_name} {employee.last_name}</div>
+                            <div className="text-sm text-muted-foreground">{employee.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{employee.department}</TableCell>
+                      <TableCell>{employee.role}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(employee.status)}>
+                          {employee.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(employee.join_date).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium">${employee.salary.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewDetails(`${employee.first_name} ${employee.last_name}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDeleteEmployee(employee.id, `${employee.first_name} ${employee.last_name}`)}
+                            disabled={deleteEmployee.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
