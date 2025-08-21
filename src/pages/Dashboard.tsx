@@ -8,9 +8,12 @@ import { useToast } from "@/hooks/use-toast"
 import { useEmployees } from "@/hooks/useEmployees"
 import { useAttendance } from "@/hooks/useAttendance"
 import { useLeaveRequests } from "@/hooks/useLeaveRequests"
+import { useNavigate } from "react-router-dom"
+import { supabase } from "@/integrations/supabase/client"
 
 export default function Dashboard() {
   const { toast } = useToast()
+  const navigate = useNavigate()
   const { data: employees = [] } = useEmployees()
   const { data: attendance = [] } = useAttendance()
   const { data: leaveRequests = [] } = useLeaveRequests()
@@ -64,6 +67,118 @@ export default function Dashboard() {
     { id: 3, title: "Process monthly payroll", priority: "high", count: 1 },
     { id: 4, title: "Update employee documents", priority: "low", count: 8 },
   ]
+
+  const handleMarkAttendance = async () => {
+    try {
+      // Get today's date
+      const today = new Date().toISOString().split('T')[0]
+      
+      // Check if attendance already exists for today
+      const { data: existingAttendance } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('date', today)
+      
+      if (existingAttendance && existingAttendance.length > 0) {
+        toast({
+          title: "Attendance Already Marked",
+          description: "Attendance for today has already been recorded.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Mark attendance for all active employees
+      const activeEmployees = employees.filter(emp => emp.status === 'Active')
+      const attendanceRecords = activeEmployees.map(employee => ({
+        employee_id: employee.id,
+        date: today,
+        status: 'Present',
+        check_in_time: '09:00:00',
+        work_hours: 8
+      }))
+
+      const { error } = await supabase
+        .from('attendance')
+        .insert(attendanceRecords)
+
+      if (error) throw error
+
+      toast({
+        title: "Attendance Marked",
+        description: `Attendance marked for ${activeEmployees.length} employees.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to mark attendance. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleProcessPayroll = async () => {
+    try {
+      const currentMonth = new Date().toLocaleString('default', { month: 'long' })
+      const currentYear = new Date().getFullYear()
+      
+      // Check if payroll already exists for current month
+      const { data: existingPayroll } = await supabase
+        .from('payroll')
+        .select('*')
+        .eq('month', currentMonth)
+        .eq('year', currentYear)
+      
+      if (existingPayroll && existingPayroll.length > 0) {
+        toast({
+          title: "Payroll Already Processed",
+          description: `Payroll for ${currentMonth} ${currentYear} has already been processed.`,
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Process payroll for all active employees
+      const activeEmployees = employees.filter(emp => emp.status === 'Active')
+      const payrollRecords = activeEmployees.map(employee => {
+        const basicSalary = employee.salary
+        const allowances = basicSalary * 0.1 // 10% allowances
+        const tax = basicSalary * 0.2 // 20% tax
+        const netSalary = basicSalary + allowances - tax
+        
+        return {
+          employee_id: employee.id,
+          month: currentMonth,
+          year: currentYear,
+          basic_salary: basicSalary,
+          allowances,
+          tax,
+          net_salary: netSalary,
+          status: 'Processed',
+          processed_date: new Date().toISOString().split('T')[0]
+        }
+      })
+
+      const { error } = await supabase
+        .from('payroll')
+        .insert(payrollRecords)
+
+      if (error) throw error
+
+      toast({
+        title: "Payroll Processed",
+        description: `Payroll processed for ${activeEmployees.length} employees.`,
+      })
+      
+      navigate('/payroll')
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process payroll. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -139,7 +254,16 @@ export default function Dashboard() {
                       {action.priority} priority
                     </Badge>
                   </div>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      if (action.title.includes('leave')) navigate('/leaves')
+                      else if (action.title.includes('payroll')) navigate('/payroll')
+                      else if (action.title.includes('documents')) navigate('/documents')
+                      else navigate('/reports')
+                    }}
+                  >
                     Review ({action.count})
                   </Button>
                 </div>
@@ -160,10 +284,7 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-24 flex-col gap-2"
-              onClick={() => toast({
-                title: "Attendance",
-                description: "Attendance marking feature coming soon!",
-              })}
+              onClick={handleMarkAttendance}
             >
               <Clock className="h-6 w-6" />
               Mark Attendance
@@ -171,10 +292,7 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-24 flex-col gap-2"
-              onClick={() => toast({
-                title: "Leave Application",
-                description: "Leave application feature coming soon!",
-              })}
+              onClick={() => navigate('/leaves')}
             >
               <Calendar className="h-6 w-6" />
               Apply Leave
@@ -182,10 +300,7 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-24 flex-col gap-2"
-              onClick={() => toast({
-                title: "Payroll",
-                description: "Payroll generation feature coming soon!",
-              })}
+              onClick={handleProcessPayroll}
             >
               <DollarSign className="h-6 w-6" />
               Generate Payroll

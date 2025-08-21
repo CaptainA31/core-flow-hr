@@ -1,4 +1,4 @@
-import { Search, Bell, User, Menu } from "lucide-react"
+import { Search, Bell, User, Menu, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useNavigate } from "react-router-dom"
 
 export function Header() {
+  const navigate = useNavigate()
   return (
     <header className="h-16 border-b border-border bg-card px-4 flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -27,11 +29,23 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative"
+          onClick={() => navigate('/notifications')}
+        >
           <Bell className="h-4 w-4" />
           <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full text-[10px] text-destructive-foreground flex items-center justify-center">
             3
           </span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => navigate('/settings')}
+        >
+          <Settings className="h-4 w-4" />
         </Button>
 
         <DropdownMenu>
@@ -52,8 +66,12 @@ export function Header() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-            <DropdownMenuItem>System Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              Profile Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              System Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive">
               Sign Out
