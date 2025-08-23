@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter, Plus, Download, Eye, Edit, Trash2 } from "lucide-react";
+import { Search, Filter, Plus, Download, Eye, Edit, Trash2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,18 +10,19 @@ import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog";
 import { useToast } from "@/hooks/use-toast";
 import { exportEmployeeReport } from "@/lib/pdf-export";
 import { useEmployees, useDeleteEmployee } from "@/hooks/useEmployees";
+import { DetailViewModal } from "@/components/common/DetailViewModal";
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const { toast } = useToast();
   const { data: employees = [], isLoading } = useEmployees();
   const deleteEmployee = useDeleteEmployee();
 
-  const handleViewDetails = (employeeName: string) => {
-    toast({
-      title: "Employee Details", 
-      description: `Viewing details for ${employeeName}`,
-    });
+  const handleViewDetails = (employee: any) => {
+    setSelectedEmployee(employee);
+    setDetailModalOpen(true);
   };
 
   const handleDeleteEmployee = async (id: string, name: string) => {
@@ -220,7 +221,7 @@ export default function Employees() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleViewDetails(`${employee.first_name} ${employee.last_name}`)}
+                            onClick={() => handleViewDetails(employee)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -245,6 +246,21 @@ export default function Employees() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Detail View Modal */}
+      {selectedEmployee && (
+        <DetailViewModal
+          isOpen={detailModalOpen}
+          onClose={() => {
+            setDetailModalOpen(false);
+            setSelectedEmployee(null);
+          }}
+          title={`${selectedEmployee.first_name} ${selectedEmployee.last_name}`}
+          icon={<User className="h-5 w-5" />}
+          data={selectedEmployee}
+          type="employee"
+        />
+      )}
     </div>
   );
 }

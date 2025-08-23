@@ -13,6 +13,21 @@ import {
   Activity
 } from "lucide-react"
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell
+} from "recharts"
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -239,6 +254,119 @@ export function ReportDetailsModal({ isOpen, onClose, reportType, reportData }: 
     }).format(amount)
   }
 
+  const getChartComponent = () => {
+    const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))', 'hsl(var(--destructive))']
+    
+    switch (reportType) {
+      case "Attendance Report":
+        const attendanceData = content?.details?.trends || [
+          { period: "This Week", attendance: 94.2, change: 1.2 },
+          { period: "Last Week", attendance: 93.0, change: -0.5 },
+          { period: "2 Weeks Ago", attendance: 93.5, change: 0.8 },
+          { period: "3 Weeks Ago", attendance: 92.7, change: -1.1 }
+        ]
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={attendanceData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="period" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="attendance" stroke="hsl(var(--primary))" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        )
+
+      case "Leave Analysis":
+        const leaveData = content?.details?.types?.map(type => ({
+          name: type.type,
+          value: type.count,
+          percentage: type.percentage
+        })) || []
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPieChart>
+              <Pie 
+                data={leaveData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percentage }) => `${name}: ${percentage}%`}
+              >
+                {leaveData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </RechartsPieChart>
+          </ResponsiveContainer>
+        )
+
+      case "Payroll Summary":
+        const payrollData = content?.details?.departments?.map(dept => ({
+          name: dept.name,
+          totalCost: dept.totalCost / 1000, // Convert to thousands
+          avgSalary: dept.avgSalary / 1000
+        })) || []
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={payrollData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`$${value}K`, ""]} />
+              <Legend />
+              <Bar dataKey="totalCost" fill="hsl(var(--primary))" name="Total Cost (K)" />
+              <Bar dataKey="avgSalary" fill="hsl(var(--secondary))" name="Avg Salary (K)" />
+            </BarChart>
+          </ResponsiveContainer>
+        )
+
+      case "Employee Analytics":
+        const employeeData = content?.details?.demographics?.map(demo => ({
+          category: demo.category,
+          count: demo.count,
+          percentage: demo.percentage
+        })) || []
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={employeeData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="category" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="hsl(var(--primary))" name="Employee Count" />
+            </BarChart>
+          </ResponsiveContainer>
+        )
+
+      default:
+        // Department reports
+        const deptData = content?.details?.projects?.map(project => ({
+          name: project.name,
+          completion: project.completion,
+          team: project.team
+        })) || []
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={deptData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="completion" fill="hsl(var(--primary))" name="Completion %" />
+              <Bar dataKey="team" fill="hsl(var(--secondary))" name="Team Size" />
+            </BarChart>
+          </ResponsiveContainer>
+        )
+    }
+  }
+
   const content = getReportContent()
   if (!content) return null
 
@@ -304,11 +432,8 @@ export function ReportDetailsModal({ isOpen, onClose, reportType, reportData }: 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center bg-muted/50 rounded-lg">
-                  <div className="text-center">
-                    <PieChart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">{content.overview.chart}</p>
-                  </div>
+                <div className="h-64">
+                  {getChartComponent()}
                 </div>
               </CardContent>
             </Card>
