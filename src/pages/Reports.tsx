@@ -11,10 +11,13 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { exportDepartmentAnalytics, downloadReportTemplate } from "@/lib/pdf-export"
+import { ReportDetailsModal } from "@/components/reports/ReportDetailsModal"
 
 export default function Reports() {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly")
   const [selectedYear, setSelectedYear] = useState("2024")
+  const [selectedReport, setSelectedReport] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const { toast } = useToast()
 
   const handleExportAll = () => {
@@ -40,10 +43,8 @@ export default function Reports() {
   }
 
   const handleViewDetails = (reportType: string) => {
-    toast({
-      title: "View Details",
-      description: `Opening detailed view for ${reportType}...`,
-    })
+    setSelectedReport(reportType)
+    setIsModalOpen(true)
   }
 
   const handleDownloadTemplate = () => {
@@ -328,6 +329,13 @@ export default function Reports() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Report Details Modal */}
+      <ReportDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        reportType={selectedReport || ""}
+      />
     </div>
   )
 }
