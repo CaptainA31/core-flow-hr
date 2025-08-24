@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Settings as SettingsIcon, User, Shield, Bell, Database, Palette, Globe, Save, Download, Upload } from "lucide-react"
+import { Settings as SettingsIcon, User, Shield, Bell, Database, Palette, Globe, Save, Download, Upload, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
@@ -15,11 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { useTheme } from "@/contexts/ThemeContext"
+import { cn } from "@/lib/utils"
 
 export default function Settings() {
   const [companyName, setCompanyName] = useState("CoreFlow HR")
   const [companyEmail, setCompanyEmail] = useState("admin@coreflow.com")
   const { toast } = useToast()
+  const { theme, setTheme, primaryColor, setPrimaryColor, primaryColors } = useTheme()
 
   const systemSettings = [
     { name: "Automatic Backups", description: "Daily database backups", enabled: true },
@@ -371,7 +374,7 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Theme Mode</label>
-                  <Select defaultValue="light">
+                  <Select value={theme} onValueChange={setTheme}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -384,12 +387,35 @@ export default function Settings() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Primary Color</label>
-                  <div className="flex gap-2 mt-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full border-2 border-primary"></div>
-                    <div className="w-8 h-8 bg-green-500 rounded-full border-2 border-transparent"></div>
-                    <div className="w-8 h-8 bg-purple-500 rounded-full border-2 border-transparent"></div>
-                    <div className="w-8 h-8 bg-red-500 rounded-full border-2 border-transparent"></div>
+                  <div className="grid grid-cols-6 gap-3 mt-3">
+                    {primaryColors.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => {
+                          setPrimaryColor(color)
+                          toast({
+                            title: "Theme Updated",
+                            description: `Primary color changed to ${color.name}.`,
+                          })
+                        }}
+                        className={cn(
+                          "w-10 h-10 rounded-full border-2 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring",
+                          color.name === primaryColor.name 
+                            ? "border-foreground shadow-lg ring-2 ring-primary ring-offset-2" 
+                            : "border-border hover:border-muted-foreground"
+                        )}
+                        style={{ backgroundColor: color.value }}
+                        aria-label={`Select ${color.name} theme`}
+                      >
+                        {color.name === primaryColor.name && (
+                          <Check className="w-5 h-5 text-primary-foreground m-auto" />
+                        )}
+                      </button>
+                    ))}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Current: {primaryColor.name.charAt(0).toUpperCase() + primaryColor.name.slice(1)}
+                  </p>
                 </div>
               </CardContent>
             </Card>
