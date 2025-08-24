@@ -32,23 +32,9 @@ import {
 
 export default function Payroll() {
   const [searchTerm, setSearchTerm] = useState("")
-  const { toast } = useToast()
-
-  const handleExportPayroll = () => {
-    exportPayrollReport(payrollData, "Current Month")
-    toast({
-      title: "Payroll Exported",
-      description: "Payroll report has been downloaded successfully.",
-    })
-  }
-
-  const handleDownloadSlip = (employeeName: string) => {
-    toast({
-      title: "Salary Slip Downloaded",
-      description: `Salary slip for ${employeeName} has been downloaded.`,
-    })
-  }
   const [selectedMonth, setSelectedMonth] = useState("2024-01")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const { toast } = useToast()
 
   const payrollData = [
     {
@@ -96,6 +82,31 @@ export default function Payroll() {
       payDate: "2024-01-31"
     }
   ]
+
+  const handleExportPayroll = () => {
+    exportPayrollReport(payrollData, "Current Month")
+    toast({
+      title: "Payroll Exported",
+      description: "Payroll report has been downloaded successfully.",
+    })
+  }
+
+  const handleDownloadSlip = (employeeName: string) => {
+    toast({
+      title: "Salary Slip Downloaded",
+      description: `Salary slip for ${employeeName} has been downloaded.`,
+    })
+  }
+  
+  // Filter payroll data based on search term and status
+  const filteredPayrollData = payrollData.filter(employee => {
+    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === "all" || employee.status.toLowerCase() === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
 
   const salaryComponents = [
     { name: "Basic Salary", amount: 45000, type: "earning" },
@@ -216,7 +227,7 @@ export default function Payroll() {
                   onChange={(e) => setSelectedMonth(e.target.value)}
                   className="w-auto"
                 />
-                <Select defaultValue="all">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -243,7 +254,12 @@ export default function Payroll() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payrollData.map((employee) => (
+                    {filteredPayrollData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center">No payroll data found</TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredPayrollData.map((employee) => (
                       <TableRow key={employee.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -278,7 +294,8 @@ export default function Payroll() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>

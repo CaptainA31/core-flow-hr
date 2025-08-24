@@ -31,6 +31,8 @@ import {
 
 export default function Documents() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedType, setSelectedType] = useState("all-types")
+  const [selectedStatus, setSelectedStatus] = useState("all-status")
   const { toast } = useToast()
 
   const handleDownloadDocument = (fileName: string) => {
@@ -100,6 +102,18 @@ export default function Documents() {
     { name: "Certificates", count: 89, icon: FileText },
     { name: "Performance Reviews", count: 156, icon: FileText }
   ]
+
+  // Filter documents based on search term, type, and status
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.type.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesType = selectedType === "all-types" || doc.type.toLowerCase() === selectedType
+    const matchesStatus = selectedStatus === "all-status" || doc.status.toLowerCase().includes(selectedStatus)
+    
+    return matchesSearch && matchesType && matchesStatus
+  })
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -230,7 +244,7 @@ export default function Documents() {
                 />
               </div>
             </div>
-            <Select defaultValue="all-types">
+            <Select value={selectedType} onValueChange={setSelectedType}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Document Type" />
               </SelectTrigger>
@@ -243,7 +257,7 @@ export default function Documents() {
                 <SelectItem value="medical">Medical</SelectItem>
               </SelectContent>
             </Select>
-            <Select defaultValue="all-status">
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -276,7 +290,12 @@ export default function Documents() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc) => (
+                {filteredDocuments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center">No documents found</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredDocuments.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -317,7 +336,8 @@ export default function Documents() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { format } from "date-fns"
 import { Calendar, Clock, Download, Filter, Search, Users, CheckCircle, XCircle, AlertCircle, UserCheck, UserX, Timer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
@@ -37,7 +38,7 @@ import {
 
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedEmployee, setSelectedEmployee] = useState("")
   const [checkInTime, setCheckInTime] = useState("")
@@ -321,7 +322,12 @@ export default function Attendance() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAttendance.map((record) => {
+                {filteredAttendance.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">No attendance records found</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAttendance.map((record) => {
                   const employee = employees.find(emp => emp.id === record.employee_id)
                   if (!employee) return null
                   
@@ -349,7 +355,8 @@ export default function Attendance() {
                       <TableCell>{record.overtime_hours || 0}h</TableCell>
                     </TableRow>
                   )
-                })}
+                  })
+                )}
               </TableBody>
             </Table>
           </div>

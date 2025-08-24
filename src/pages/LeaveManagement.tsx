@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 export default function LeaveManagement() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [showApplyDialog, setShowApplyDialog] = useState(false)
   const { toast } = useToast()
 
@@ -87,6 +88,17 @@ export default function LeaveManagement() {
       reason: "Personal work"
     }
   ]
+
+  // Filter leave requests based on search term and status
+  const filteredLeaveRequests = leaveRequests.filter(request => {
+    const matchesSearch = request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.leaveType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.reason.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === "all" || request.status.toLowerCase() === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
 
   const leaveBalance = [
     { type: "Annual Leave", used: 8, remaining: 22, total: 30 },
@@ -248,7 +260,7 @@ export default function LeaveManagement() {
                     />
                   </div>
                 </div>
-                <Select defaultValue="all">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -273,7 +285,12 @@ export default function LeaveManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {leaveRequests.map((request) => (
+                    {filteredLeaveRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center">No leave requests found</TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredLeaveRequests.map((request) => (
                       <TableRow key={request.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -328,7 +345,8 @@ export default function LeaveManagement() {
                            )}
                         </TableCell>
                       </TableRow>
-                    ))}
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
