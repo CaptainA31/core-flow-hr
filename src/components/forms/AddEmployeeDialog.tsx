@@ -14,9 +14,11 @@ import {
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAddEmployee } from "@/hooks/useEmployees";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AddEmployeeDialog() {
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const addEmployee = useAddEmployee();
   
@@ -28,7 +30,41 @@ export function AddEmployeeDialog() {
     role: "",
     salary: "",
     startDate: "",
+    avatar_url: "",
   });
+
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('You must select an image to upload.');
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('employee-avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('employee-avatars')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, avatar_url: data.publicUrl }));
+    } catch (error) {
+      alert('Error uploading avatar!');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +78,7 @@ export function AddEmployeeDialog() {
         role: formData.role,
         salary: parseFloat(formData.salary),
         join_date: formData.startDate,
+        avatar_url: formData.avatar_url,
       });
 
       toast({
@@ -58,6 +95,7 @@ export function AddEmployeeDialog() {
         role: "",
         salary: "",
         startDate: "",
+        avatar_url: "",
       });
     } catch (error) {
       toast({
@@ -115,6 +153,16 @@ export function AddEmployeeDialog() {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="avatar">Profile Picture</Label>
+            <Input
+              id="avatar"
+              type="file"
+              accept="image/*"
+              onChange={uploadAvatar}
+              disabled={uploading}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             <Select value={formData.department} onValueChange={(value) => setFormData({ ...formData, department: value })}>
               <SelectTrigger>
@@ -127,6 +175,8 @@ export function AddEmployeeDialog() {
                 <SelectItem value="HR">HR</SelectItem>
                 <SelectItem value="Finance">Finance</SelectItem>
                 <SelectItem value="Operations">Operations</SelectItem>
+                <SelectItem value="Design">Design</SelectItem>
+                <SelectItem value="Legal">Legal</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -165,7 +215,7 @@ export function AddEmployeeDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={addEmployee.isPending}>
+            <Button type="submit" disabled={addEmployee.isPending || uploading}>
               {addEmployee.isPending ? "Adding..." : "Add Employee"}
             </Button>
           </div>

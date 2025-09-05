@@ -40,6 +40,27 @@ export const useAddEmployee = () => {
   });
 };
 
+export const useUpdateEmployee = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Employee> }) => {
+      const { data, error } = await supabase
+        .from('employees')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+};
+
 export const useDeleteEmployee = () => {
   const queryClient = useQueryClient();
   

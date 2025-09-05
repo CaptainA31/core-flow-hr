@@ -1,388 +1,278 @@
-import { useState } from "react"
-import { Calendar, Plus, Filter, Search, CheckCircle, XCircle, Clock, User, Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { exportLeaveReport } from "@/lib/pdf-export"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react";
+import { Search, Filter, Eye, Check, X, Calendar, Clock, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { useLeaveRequests } from "@/hooks/useLeaveRequests";
+import { useApproveLeaveRequest, useRejectLeaveRequest } from "@/hooks/useLeaveRequestActions";
+import { DetailViewModal } from "@/components/common/DetailViewModal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function LeaveManagement() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [showApplyDialog, setShowApplyDialog] = useState(false)
-  const { toast } = useToast()
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const { data: leaveRequests = [], isLoading } = useLeaveRequests();
+  const approveRequest = useApproveLeaveRequest();
+  const rejectRequest = useRejectLeaveRequest();
+  const { toast } = useToast();
 
-  const handleExportReport = () => {
-    const exportData = leaveRequests.map(request => ({
-      employee: request.employeeName,
-      type: request.leaveType,
-      startDate: request.startDate,
-      endDate: request.endDate,
-      days: request.days,
-      status: request.status
-    }))
-    exportLeaveReport(exportData)
-    toast({
-      title: "Report Exported",
-      description: "Leave management report has been downloaded successfully.",
-    })
-  }
+  const handleViewDetails = (request: any) => {
+    setSelectedRequest(request);
+    setDetailModalOpen(true);
+  };
 
-  const leaveRequests = [
-    {
-      id: 1,
-      employeeName: "Sarah Johnson",
-      leaveType: "Annual Leave",
-      startDate: "2024-01-15",
-      endDate: "2024-01-17",
-      days: 3,
-      status: "Pending",
-      appliedDate: "2024-01-10",
-      reason: "Family vacation"
-    },
-    {
-      id: 2,
-      employeeName: "Mike Chen",
-      leaveType: "Sick Leave",
-      startDate: "2024-01-12",
-      endDate: "2024-01-12",
-      days: 1,
-      status: "Approved",
-      appliedDate: "2024-01-11",
-      reason: "Medical appointment"
-    },
-    {
-      id: 3,
-      employeeName: "Alex Rodriguez",
-      leaveType: "Personal Leave",
-      startDate: "2024-01-20",
-      endDate: "2024-01-22",
-      days: 3,
-      status: "Rejected",
-      appliedDate: "2024-01-08",
-      reason: "Personal work"
+  const handleApproveRequest = async (id: string, employeeName: string) => {
+    try {
+      await approveRequest.mutateAsync(id);
+      toast({
+        title: "Request Approved",
+        description: `${employeeName}'s leave request has been approved.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve leave request.",
+        variant: "destructive",
+      });
     }
-  ]
+  };
+
+  const handleRejectRequest = async (id: string, employeeName: string) => {
+    try {
+      await rejectRequest.mutateAsync(id);
+      toast({
+        title: "Request Rejected",
+        description: `${employeeName}'s leave request has been rejected.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject leave request.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Filter leave requests based on search term and status
-  const filteredLeaveRequests = leaveRequests.filter(request => {
-    const matchesSearch = request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.leaveType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.reason.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRequests = leaveRequests.filter(request => {
+    const matchesSearch = `${request.employees.first_name} ${request.employees.last_name}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase()) ||
+      request.leave_type.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || request.status.toLowerCase() === statusFilter
+    const matchesStatus = selectedStatus === "All" || request.status === selectedStatus;
     
-    return matchesSearch && matchesStatus
-  })
+    return matchesSearch && matchesStatus;
+  });
 
-  const leaveBalance = [
-    { type: "Annual Leave", used: 8, remaining: 22, total: 30 },
-    { type: "Sick Leave", used: 3, remaining: 7, total: 10 },
-    { type: "Personal Leave", used: 2, remaining: 3, total: 5 },
-    { type: "Maternity Leave", used: 0, remaining: 90, total: 90 }
-  ]
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
-  }
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case "Approved": return "default"
-      case "Pending": return "secondary"
-      case "Rejected": return "destructive"
-      default: return "outline"
+      case "Approved":
+        return "default";
+      case "Pending":
+        return "secondary";
+      case "Rejected":
+        return "destructive";
+      default:
+        return "outline";
     }
-  }
+  };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Approved": return <CheckCircle className="h-4 w-4" />
-      case "Pending": return <Clock className="h-4 w-4" />
-      case "Rejected": return <XCircle className="h-4 w-4" />
-      default: return null
-    }
-  }
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Leave Management</h1>
           <p className="text-muted-foreground">
-            Manage employee leave requests and balances
+            Manage employee leave requests and approvals
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={handleExportReport}>
-            <Download className="h-4 w-4" />
-            Export Report
-          </Button>
-          <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Apply for Leave
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Apply for Leave</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Leave Type</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select leave type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">Annual Leave</SelectItem>
-                    <SelectItem value="sick">Sick Leave</SelectItem>
-                    <SelectItem value="personal">Personal Leave</SelectItem>
-                    <SelectItem value="emergency">Emergency Leave</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Start Date</label>
-                  <Input type="date" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">End Date</label>
-                  <Input type="date" />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Reason</label>
-                <Textarea placeholder="Please provide a reason for your leave request..." />
-              </div>
-              <div className="flex gap-2 pt-4">
-                <Button onClick={() => {
-                  setShowApplyDialog(false)
-                  toast({
-                    title: "Leave Request Submitted",
-                    description: "Your leave request has been submitted for approval.",
-                  })
-                }}>Submit Request</Button>
-                <Button variant="outline" onClick={() => setShowApplyDialog(false)}>Cancel</Button>
-              </div>
-            </div>
-          </DialogContent>
-          </Dialog>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-warning" />
-              <div className="text-2xl font-bold text-warning">5</div>
-            </div>
-            <p className="text-xs text-muted-foreground">Pending Requests</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-success" />
-              <div className="text-2xl font-bold text-success">23</div>
-            </div>
-            <p className="text-xs text-muted-foreground">Approved This Month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
-              <div className="text-2xl font-bold text-primary">12</div>
-            </div>
-            <p className="text-xs text-muted-foreground">On Leave Today</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-secondary" />
-              <div className="text-2xl font-bold text-secondary">156</div>
-            </div>
-            <p className="text-xs text-muted-foreground">Total Leave Days</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Leave Requests */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Leave Requests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search requests..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Leave Type</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredLeaveRequests.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center">No leave requests found</TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredLeaveRequests.map((request) => (
-                      <TableRow key={request.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                {getInitials(request.employeeName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{request.employeeName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{request.leaveType}</TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div>{request.startDate} to {request.endDate}</div>
-                            <div className="text-muted-foreground">{request.days} days</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusColor(request.status)} className="gap-1">
-                            {getStatusIcon(request.status)}
-                            {request.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                           {request.status === "Pending" && (
-                             <div className="flex gap-1">
-                               <Button 
-                                 size="sm" 
-                                 variant="outline" 
-                                 className="h-8 px-2"
-                                 onClick={() => toast({
-                                   title: "Leave Approved",
-                                   description: `${request.employeeName}'s leave request has been approved.`,
-                                 })}
-                               >
-                                 <CheckCircle className="h-3 w-3" />
-                               </Button>
-                               <Button 
-                                 size="sm" 
-                                 variant="outline" 
-                                 className="h-8 px-2"
-                                 onClick={() => toast({
-                                   title: "Leave Rejected",
-                                   description: `${request.employeeName}'s leave request has been rejected.`,
-                                   variant: "destructive"
-                                 })}
-                               >
-                                 <XCircle className="h-3 w-3" />
-                               </Button>
-                             </div>
-                           )}
-                        </TableCell>
-                      </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Leave Balance */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Leave Balance</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {leaveBalance.map((leave, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{leave.type}</span>
-                    <span className="text-muted-foreground">{leave.remaining}/{leave.total}</span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full" 
-                      style={{ width: `${(leave.used / leave.total) * 100}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Used: {leave.used}</span>
-                    <span>Remaining: {leave.remaining}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="text-2xl font-bold">{leaveRequests.length}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{leaveRequests.filter(req => req.status === 'Pending').length}</div>
+            <p className="text-xs text-muted-foreground">Awaiting approval</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <Check className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{leaveRequests.filter(req => req.status === 'Approved').length}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+            <X className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{leaveRequests.filter(req => req.status === 'Rejected').length}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Filter and Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search leave requests..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Statuses</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Approved">Approved</SelectItem>
+            <SelectItem value="Rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Leave Requests Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Leave Requests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Leave Type</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
+                  <TableHead>Days</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center">Loading leave requests...</TableCell>
+                  </TableRow>
+                ) : filteredRequests.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center">No leave requests found</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredRequests.map((request) => (
+                    <TableRow key={request.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={request.employees.avatar_url || ''} />
+                            <AvatarFallback>{getInitials(request.employees.first_name, request.employees.last_name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{request.employees.first_name} {request.employees.last_name}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{request.leave_type}</TableCell>
+                      <TableCell>{new Date(request.start_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(request.end_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{request.days_requested}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(request.status)}>
+                          {request.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewDetails(request)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {request.status === 'Pending' && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleApproveRequest(request.id, `${request.employees.first_name} ${request.employees.last_name}`)}
+                                disabled={approveRequest.isPending}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleRejectRequest(request.id, `${request.employees.first_name} ${request.employees.last_name}`)}
+                                disabled={rejectRequest.isPending}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Detail View Modal */}
+      {selectedRequest && (
+        <DetailViewModal
+          isOpen={detailModalOpen}
+          onClose={() => {
+            setDetailModalOpen(false);
+            setSelectedRequest(null);
+          }}
+          title={`Leave Request - ${selectedRequest.employees.first_name} ${selectedRequest.employees.last_name}`}
+          icon={<Calendar className="h-5 w-5" />}
+          data={selectedRequest}
+          type="leave"
+        />
+      )}
     </div>
-  )
+  );
 }

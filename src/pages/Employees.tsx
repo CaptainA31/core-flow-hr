@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddEmployeeDialog } from "@/components/forms/AddEmployeeDialog";
+import { EditEmployeeDialog } from "@/components/forms/EditEmployeeDialog";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import { exportEmployeeReport } from "@/lib/pdf-export";
 import { useEmployees, useDeleteEmployee } from "@/hooks/useEmployees";
@@ -16,6 +18,7 @@ export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { toast } = useToast();
   const { data: employees = [], isLoading } = useEmployees();
   const deleteEmployee = useDeleteEmployee();
@@ -23,6 +26,11 @@ export default function Employees() {
   const handleViewDetails = (employee: any) => {
     setSelectedEmployee(employee);
     setDetailModalOpen(true);
+  };
+
+  const handleEditEmployee = (employee: any) => {
+    setSelectedEmployee(employee);
+    setEditModalOpen(true);
   };
 
   const handleDeleteEmployee = async (id: string, name: string) => {
@@ -225,17 +233,28 @@ export default function Employees() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4" />
-                          </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => handleDeleteEmployee(employee.id, `${employee.first_name} ${employee.last_name}`)}
-                            disabled={deleteEmployee.isPending}
+                            onClick={() => handleEditEmployee(employee)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
+                          <ConfirmDialog
+                            title="Delete Employee"
+                            description={`Are you sure you want to delete ${employee.first_name} ${employee.last_name}? This action cannot be undone.`}
+                            onConfirm={() => handleDeleteEmployee(employee.id, `${employee.first_name} ${employee.last_name}`)}
+                            destructive
+                            trigger={
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                disabled={deleteEmployee.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -261,6 +280,16 @@ export default function Employees() {
           type="employee"
         />
       )}
+
+      {/* Edit Employee Modal */}
+      <EditEmployeeDialog
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setSelectedEmployee(null);
+        }}
+        employee={selectedEmployee}
+      />
     </div>
   );
 }

@@ -18,7 +18,7 @@ export const useLeaveRequests = () => {
         .from('leave_requests')
         .select(`
           *,
-          employees!inner (
+          employees!leave_requests_employee_id_fkey (
             first_name,
             last_name,
             avatar_url
